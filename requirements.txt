@@ -2,3 +2,5 @@ gpxpy
 matplotlib
 numpy
 pandas
+contextily
+geopandas

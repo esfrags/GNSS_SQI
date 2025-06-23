@@ -26,6 +26,12 @@ python src/main.py <path_to_gpx_file1> <path_to_gpx_file2> ...
 
 Replace `<path_to_gpx_file>` with the path(s) to your GPX files.
 
+## 🔭 Future Work
+- Adding more sophisticated checks (e.g., signal loss, duplicate points, missing data).
+- Allowing thresholds to be set per activity or user.
+- Returning indices to cross-reference with your heatmap.
+
+
 ## Contributing
 Contributions are welcome! If you have suggestions for improvements or find bugs, please open an issue or submit a pull request.
 
