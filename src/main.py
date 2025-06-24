@@ -1,11 +1,11 @@
 import argparse
 import os
 from gpx_processing import GPXProcessor
-from heatmap import route_signal_strength
+from map_generator import MapGenerator
 from utils import validate_gpx_file, log_message
 
 def main():
-    parser = argparse.ArgumentParser(description='Analyze GPS signal interferences and generate a heatmap.')
+    parser = argparse.ArgumentParser(description='Plot GPX routes on a satellite map.')
     parser.add_argument('gpx_folder', help='Folder containing GPX files to process')
     args = parser.parse_args()
 
@@ -19,7 +19,6 @@ def main():
         log_message(f"No GPX files found in folder: {args.gpx_folder}")
         return
 
-    all_signal_quality_data = []
     all_route_analysis = []
 
     for gpx_file in gpx_files:
@@ -30,13 +29,11 @@ def main():
         log_message(f"Processing file: {gpx_file}")
         processor = GPXProcessor(gpx_file)
         processor.load_gpx()
-        signal_quality_data = processor.extract_signal_quality()
-        route_analysis = processor.analyze_route()
-        
-        all_signal_quality_data.append(signal_quality_data)
+        route_analysis = processor.extract_route()
         all_route_analysis.append(route_analysis)
 
-    route_signal_strength(all_signal_quality_data, all_route_analysis)
+    map_gen = MapGenerator(all_route_analysis)
+    map_gen.plot_routes_on_satellite()
 
 if __name__ == '__main__':
     main()
