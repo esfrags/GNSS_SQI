@@ -71,3 +71,18 @@ class GPXProcessor:
             speeds.append(speed)
 
         return speeds
+
+    def extract_altitudes(self):
+        """
+        Returns a list of altitudes (elevations in meters) for each point in the route.
+        """
+        if self.data is None:
+            raise ValueError("GPX data not loaded. Please call load_gpx() first.")
+
+        altitudes = []
+        for track in self.data.tracks:
+            for segment in track.segments:
+                for point in segment.points:
+                    # Some GPX points may not have elevation; use 0.0 or np.nan if missing
+                    altitudes.append(point.elevation if point.elevation is not None else 0.0)
+        return altitudes

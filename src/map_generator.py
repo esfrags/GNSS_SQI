@@ -88,3 +88,74 @@ class MapGenerator:
         fig.colorbar(lc, ax=ax, label='Speed (m/s)')
         ax.set_title('Color-Coded Speed on Satellite Image (Outliers in Red)')
         plt.show()
+
+    def plot_routes_with_outliers(self, speed_outlier_indices=None, altitude_outlier_indices=None, zoom=16, cmap='plasma'):
+        """
+        Plots the GPX routes as color-coded lines based on speed on top of a satellite image.
+        Speed outliers are shown as red dots, altitude outliers as magenta dots.
+        """
+        segments = []
+        speeds = []
+        speed_outlier_x = []
+        speed_outlier_y = []
+        altitude_outlier_x = []
+        altitude_outlier_y = []
+
+        for idx, (route, speed_list) in enumerate(zip(self.all_route_analysis, self.all_speeds)):
+            lats = route.get('latitudes', [])
+            lons = route.get('longitudes', [])
+            n = min(len(lats), len(lons), len(speed_list))
+            if n < 2:
+                continue
+            gdf = gpd.GeoDataFrame(
+                geometry=[Point(lon, lat) for lon, lat in zip(lons[:n], lats[:n])],
+                crs='EPSG:4326'
+            ).to_crs(epsg=3857)
+            xs = gdf.geometry.x.values
+            ys = gdf.geometry.y.values
+            for i in range(n - 1):
+                segments.append([(xs[i], ys[i]), (xs[i+1], ys[i+1])])
+                speeds.append((speed_list[i] + speed_list[i+1]) / 2)
+            # Collect speed outlier points
+            if speed_outlier_indices is not None:
+                for oi in speed_outlier_indices[idx]:
+                    if oi < len(xs):
+                        speed_outlier_x.append(xs[oi])
+                        speed_outlier_y.append(ys[oi])
+            # Collect altitude outlier points
+            if altitude_outlier_indices is not None:
+                for oi in altitude_outlier_indices[idx]:
+                    if oi < len(xs):
+                        altitude_outlier_x.append(xs[oi])
+                        altitude_outlier_y.append(ys[oi])
+
+        if not segments:
+            print("No route data to plot.")
+            return
+
+        fig, ax = plt.subplots(figsize=(10, 10))
+        lc = LineCollection(segments, cmap=cmap, linewidths=3, array=np.array(speeds), zorder=2)
+        ax.add_collection(lc)
+        ax.relim()
+        ax.autoscale_view()
+
+        xmin = min([min(seg[0][0], seg[1][0]) for seg in segments])
+        xmax = max([max(seg[0][0], seg[1][0]) for seg in segments])
+        ymin = min([min(seg[0][1], seg[1][1]) for seg in segments])
+        ymax = max([max(seg[0][1], seg[1][1]) for seg in segments])
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+
+        ctx.add_basemap(ax, source=ctx.providers.Esri.WorldImagery, crs='EPSG:3857', zoom=zoom)
+        # Plot speed outliers as red dots
+        if speed_outlier_x and speed_outlier_y:
+            ax.scatter(speed_outlier_x, speed_outlier_y, color='red', s=30, label='Speed Outlier', zorder=3)
+        # Plot altitude outliers as magenta dots
+        if altitude_outlier_x and altitude_outlier_y:
+            ax.scatter(altitude_outlier_x, altitude_outlier_y, color='magenta', s=30, label='Altitude Outlier', zorder=3)
+        if (speed_outlier_x and speed_outlier_y) or (altitude_outlier_x and altitude_outlier_y):
+            ax.legend()
+        ax.set_axis_off()
+        fig.colorbar(lc, ax=ax, label='Speed (m/s)')
+        ax.set_title('Color-Coded Speed on Satellite Image\n(Red: Speed Outlier, Magenta: Altitude Outlier)')
+        plt.show()
